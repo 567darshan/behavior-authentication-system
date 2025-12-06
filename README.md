@@ -188,6 +188,6 @@ This authentication method can be used in:
 ---
 
 # 👤 Author
-Darshan
+# Darshan
 Behavior-Based Authentication Prototype – Cybersecurity + AI Project
 
