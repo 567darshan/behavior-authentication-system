@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Behavior-Based Passwordless Login</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      line-height: 1.5;
+    }
+    input, button {
+      padding: 8px;
+      margin: 5px 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .box {
+      border: 1px solid #ccc;
+      padding: 16px;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+    .log {
+      margin-top: 10px;
+      padding: 10px;
+      background: #f7f7f7;
+      min-height: 40px;
+      white-space: pre-wrap;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .success { color: green; font-weight: bold; }
+    .error { color: red; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h2>Behavior-Based Passwordless Login (Demo)</h2>
+  <p>
+    Fixed phrase (you must type exactly this): 
+    <b>mysecurephrase</b>
+  </p>
+
+  <div class="box">
+    <label>Username:</label>
+    <input id="username" placeholder="Enter username" />
+
+    <label>Type the phrase below (normal speed, no copy-paste):</label>
+    <input id="phraseInput" placeholder="mysecurephrase" autocomplete="off" />
+
+    <button id="registerBtn">Register Pattern</button>
+    <button id="loginBtn">Login (Verify)</button>
+
+    <div class="log" id="logBox"></div>
+  </div>
+
+  <script>
+    const FIXED_PHRASE = "mysecurephrase";
+    const phraseInput = document.getElementById("phraseInput");
+    const logBox = document.getElementById("logBox");
+    const usernameInput = document.getElementById("username");
+
+    let keyTimes = [];
+
+    function log(msg, type = "") {
+      if (type === "error") {
+        logBox.innerHTML = '<span class="error">' + msg + "</span>";
+      } else if (type === "success") {
+        logBox.innerHTML = '<span class="success">' + msg + "</span>";
+      } else {
+        logBox.textContent = msg;
+      }
+    }
+
+    // Capture key timing
+    phraseInput.addEventListener("keydown", (e) => {
+      const now = performance.now();
+      keyTimes.push(now);
+    });
+
+    function getIntervals() {
+      if (keyTimes.length < 2) return [];
+      const intervals = [];
+      for (let i = 1; i < keyTimes.length; i++) {
+        intervals.push(keyTimes[i] - keyTimes[i - 1]); // ms
+      }
+      return intervals;
+    }
+
+    function resetCapture() {
+      keyTimes = [];
+    }
+
+    async function sendData(endpoint) {
+      const username = usernameInput.value.trim();
+      const phrase = phraseInput.value.trim();
+
+      if (!username) {
+        log("Please enter username.", "error");
+        return;
+      }
+      if (!phrase) {
+        log("Please type the phrase.", "error");
+        return;
+      }
+
+      const intervals = getIntervals();
+
+      if (intervals.length < 3) {
+        log("Please type normally; we need more key presses.", "error");
+        return;
+      }
+
+      log("Sending data to server...");
+
+      try {
+        const res = await fetch("http://127.0.0.1:8000/" + endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username,
+            phrase,
+            intervals,
+          }),
+        });
+
+        const data = await res.json();
+        console.log(data);
+
+        if (!data.success) {
+          log(data.message || "Operation failed", "error");
+          return;
+        }
+
+        if (endpoint === "register") {
+          log(
+            `Registered pattern for ${username}. Interval count: ${data.interval_count}`,
+            "success"
+          );
+        } else {
+          const msg =
+            `${data.message}\n` +
+            `Distance: ${data.distance.toFixed(2)} ms\n` +
+            `Threshold: ${data.threshold} ms\n` +
+            `Genuine user: ${data.genuine_user}`;
+          log(msg, data.genuine_user ? "success" : "error");
+        }
+      } catch (err) {
+        console.error(err);
+        log("Error connecting to backend. Is it running?", "error");
+      } finally {
+        // Clear timings so next attempt is fresh
+        resetCapture();
+      }
+    }
+
+    document.getElementById("registerBtn").addEventListener("click", () => {
+      sendData("register");
+    });
+
+    document.getElementById("loginBtn").addEventListener("click", () => {
+      sendData("verify");
+    });
+  </script>
+</body>
+</html>
