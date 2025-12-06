@@ -154,7 +154,7 @@ Verifies if the new typing matches the saved pattern.
 
 ---
 
- 📘 Real-World Applications
+ # 📘 Real-World Applications
 
 This authentication method can be used in:
 
@@ -167,7 +167,7 @@ This authentication method can be used in:
 
 ---
 
-⚠️ Limitations
+# ⚠️ Limitations
 
 * Typing behavior changes with mood, stress, or keyboard
 * Short phrases give lower accuracy
@@ -176,7 +176,7 @@ This authentication method can be used in:
 
 ---
 
-🚀 Future Scope
+# 🚀 Future Scope
 
 * Use machine learning (SVM/KNN) for more accurate classification
 * Add mouse movement and touch pressure analysis
@@ -188,6 +188,6 @@ This authentication method can be used in:
 ---
 
 # 👤 Author
-# Darshan
+# Darshan A
 Behavior-Based Authentication Prototype – Cybersecurity + AI Project
 
